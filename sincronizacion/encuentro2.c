@@ -1,50 +1,64 @@
-#include <stdio.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
-sem_t s1;
-sem_t s2;
-sem_t s3;
-void *h1(){
-	printf ("esperando por h2 y h3.... \n");
-	sem_post(&s1);
-	sem_post(&s1);
-	sem_wait(&s2);
-	sem_wait(&s3);
-	printf ("ya termino la espera de h1 .... \n");
-	pthread_exit(NULL);
-}	
 
-void *h2(){
-	printf ("esperando por h1 y h3.... \n");
-	sem_post(&s2);
-	sem_post(&s2);
-	sem_wait(&s1);
-	sem_wait(&s3);
-	printf ("ya termino la espera de h2 .... \n");
-	pthread_exit(NULL);
-}	
-void *h3(){
-	sleep(3);
-	printf ("esperando por h1 y h2.... \n");
-	sem_post(&s3);
-	sem_post(&s3);
-	sem_wait(&s1);
-	sem_wait(&s2);
-	printf ("ya termino la espera de h3 .... \n");
-	pthread_exit(NULL);
-}	
-int main (){
-	pthread_t tid1, tid2, tid3;
-	sem_init(&s1,0,0); //valor inicial 0
-	sem_init(&s2,0,0); //valor inicial 0
-	sem_init(&s3,0,0); //valor inicial 0
-	pthread_create(&tid1,NULL,h1,NULL );
-	pthread_create(&tid2,NULL,h2,NULL );
-	pthread_create(&tid3,NULL,h3,NULL );
-	pthread_join(tid1,NULL); //primer problema de serializ
-	pthread_join(tid2,NULL); //primer problema de serializ
-	pthread_join(tid3,NULL); //primer problema de serializ
-	printf ("Terminaron los hilos ... \n");
-	return 0;
+sem_t semaforoAB;
+sem_t semaforoAC;
+sem_t semaforoBA;
+sem_t semaforoBC;
+sem_t semaforoCA;
+sem_t semaforoCB;
+
+
+ void *hiloA() {
+    printf ("Inicinado hiloA\n");
+    printf ("Espero el Hilo B y C ....\n");
+    sem_post(&semaforoAB);
+    sem_post(&semaforoAC);
+    sem_wait(&semaforoBA);
+    sem_wait(&semaforoCA);
+    printf ("Termina el hiloA.\n");
+    pthread_exit(NULL);
+ }
+ 
+ void *hiloB() {
+    printf ("Inicinado hiloB\n");
+    printf ("Espero el Hilo A y C ....\n");
+    sem_post(&semaforoBA);
+    sem_post(&semaforoBC);
+    sem_wait(&semaforoAB);
+    sem_wait(&semaforoCB);
+    printf ("Termina el hiloB.\n");
+    pthread_exit(NULL);
+ }
+ 
+ void *hiloC() {
+    printf ("Inicinado hiloC\n");
+    printf ("Espero el Hilo A y B ....\n");
+    sem_post(&semaforoCA);
+    sem_post(&semaforoCB);
+    sem_wait(&semaforoAC);
+    sem_wait(&semaforoBC);
+    printf ("Termina el hiloC.\n");
+    pthread_exit(NULL);
+ }
+ 
+int main(){
+    sem_init(&semaforoAB, 0 , 0);
+    sem_init(&semaforoAC, 0 , 0);
+    sem_init(&semaforoBA, 0 , 0);
+    sem_init(&semaforoBC, 0 , 0);
+    sem_init(&semaforoCA, 0 , 0);
+    sem_init(&semaforoCB, 0 , 0);
+    pthread_t tid[3];
+    pthread_create( &tid[0], NULL , hiloA, NULL);
+    pthread_create( &tid[1], NULL , hiloB, NULL);
+    pthread_create( &tid[2], NULL , hiloC, NULL);
+    pthread_join(tid[0] ,NULL);
+    pthread_join(tid[1] ,NULL);
+    pthread_join(tid[2] ,NULL);
+    printf ("Terminaron todos los hilos.\n");
+
+    return 0;
 }
